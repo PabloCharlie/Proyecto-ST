@@ -1,31 +1,33 @@
 """Pacman, classic arcade game.
 
-Exercises
-
-1. Change the board.
-2. Change the number of ghosts.
-3. Change where pacman starts.
-4. Make the ghosts faster/slower.
-5. Make the ghosts smarter.
+Ejemplo modificado del sitio Grant Jenks para prácticas de programación.
 """
 
 from random import choice
-from turtle import *
-
+from turtle import (
+    Turtle, bgcolor, clear, dot, done, goto, hideturtle,
+    listen, onkey, setup, tracer, update, up, ontimer
+)
 from freegames import floor, vector
 
+# Estado del juego: puntuación actual
 state = {'score': 0}
+# Objetos Turtle para dibujar el mapa y el puntaje
 path = Turtle(visible=False)
 writer = Turtle(visible=False)
+# Vectores de dirección y posición inicial
 aim = vector(5, 0)
 pacman = vector(-40, -80)
+
+# Definición de fantasmas: [Posición actual, Dirección]
 ghosts = [
     [vector(-180, 160), vector(5, 0)],
     [vector(-180, -160), vector(0, 5)],
     [vector(100, 160), vector(0, -5)],
     [vector(100, -160), vector(-5, 0)],
 ]
-# fmt: off
+
+# Matriz del tablero: 0 = Pared, 1 = Camino con comida, 2 = Camino vacío
 tiles = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
@@ -48,17 +50,16 @@ tiles = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
-# fmt: on
 
 
 def square(x, y):
-    """Draw square using path at (x, y)."""
+    """Dibuja un cuadrado de color azul (pared) en las coordenadas (x, y)."""
     path.up()
     path.goto(x, y)
     path.down()
     path.begin_fill()
 
-    for count in range(4):
+    for _ in range(4):
         path.forward(20)
         path.left(90)
 
@@ -66,7 +67,7 @@ def square(x, y):
 
 
 def offset(point):
-    """Return offset of point in tiles."""
+    """Calcula el índice del punto en la lista 'tiles'."""
     x = (floor(point.x, 20) + 200) / 20
     y = (180 - floor(point.y, 20)) / 20
     index = int(x + y * 20)
@@ -74,7 +75,7 @@ def offset(point):
 
 
 def valid(point):
-    """Return True if point is valid in tiles."""
+    """Retorna True si la posición es válida (no es una pared)."""
     index = offset(point)
 
     if tiles[index] == 0:
@@ -89,7 +90,7 @@ def valid(point):
 
 
 def world():
-    """Draw world using path."""
+    """Dibuja el mundo: paredes y alimento inicial."""
     bgcolor('black')
     path.color('blue')
 
@@ -108,17 +109,19 @@ def world():
 
 
 def move():
-    """Move pacman and all ghosts."""
+    """Mueve a Pacman y a los fantasmas, maneja colisiones y puntos."""
     writer.undo()
     writer.write(state['score'])
 
     clear()
 
+    # Movimiento de Pacman
     if valid(pacman + aim):
         pacman.move(aim)
 
     index = offset(pacman)
 
+    # Si pisa alimento, aumenta puntaje y marca como vacío (tile = 2)
     if tiles[index] == 1:
         tiles[index] = 2
         state['score'] += 1
@@ -126,14 +129,17 @@ def move():
         y = 180 - (index // 20) * 20
         square(x, y)
 
+    # Dibujar Pacman
     up()
     goto(pacman.x + 10, pacman.y + 10)
     dot(20, 'yellow')
 
+    # Movimiento de Fantasmas
     for point, course in ghosts:
         if valid(point + course):
             point.move(course)
         else:
+            # Si choca, elige una dirección aleatoria
             options = [
                 vector(5, 0),
                 vector(-5, 0),
@@ -150,31 +156,38 @@ def move():
 
     update()
 
+    # Detectar colisión con fantasmas (Fin del juego)
     for point, course in ghosts:
         if abs(pacman - point) < 20:
             return
 
+    # Llamar a la función de nuevo (Velocidad del juego)
     ontimer(move, 100)
 
 
 def change(x, y):
-    """Change pacman aim if valid."""
+    """Cambia la dirección de Pacman si el giro es válido."""
     if valid(pacman + vector(x, y)):
         aim.x = x
         aim.y = y
 
 
+# Configuración inicial de la ventana
 setup(420, 420, 370, 0)
 hideturtle()
 tracer(False)
 writer.goto(160, 160)
 writer.color('white')
 writer.write(state['score'])
+
+# Captura de teclas
 listen()
 onkey(lambda: change(5, 0), 'Right')
 onkey(lambda: change(-5, 0), 'Left')
 onkey(lambda: change(0, 5), 'Up')
 onkey(lambda: change(0, -5), 'Down')
+
+# Iniciar juego
 world()
 move()
 done()
